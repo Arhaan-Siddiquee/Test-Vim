@@ -374,5 +374,4 @@ const Gamify = () => {
     </div>
   );
 };
-
 export default Gamify;
