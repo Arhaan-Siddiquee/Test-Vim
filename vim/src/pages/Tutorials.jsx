@@ -1,187 +1,502 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const Tutorials = () => {
-  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [timeframe, setTimeframe] = useState('weekly')
+  const [category, setCategory] = useState('all')
+  const [showDetails, setShowDetails] = useState(null)
   
   const categories = [
-    { id: 'all', name: 'All Tutorials' },
-    { id: 'technique', name: 'Technique' },
-    { id: 'nutrition', name: 'Nutrition' },
-    { id: 'mindfulness', name: 'Mindfulness' },
-    { id: 'recovery', name: 'Recovery' }
+    { id: 'all', name: 'Overall' },
+    { id: 'strength', name: 'Strength' },
+    { id: 'cardio', name: 'Cardio' },
+    { id: 'consistency', name: 'Consistency' },
+    { id: 'progress', name: 'Progress' }
   ]
   
-  const tutorials = [
+  const timeframes = [
+    { id: 'weekly', name: 'This Week' },
+    { id: 'monthly', name: 'This Month' },
+    { id: 'alltime', name: 'All Time' }
+  ]
+  
+  // Sample user data with our unique point system
+  const users = [
     {
       id: 1,
-      title: 'Proper Squat Form',
-      category: 'technique',
-      duration: '8 min',
-      level: 'Beginner',
-      image: '/api/placeholder/400/240',
-      views: '12.5K',
-      description: 'Master the perfect squat form to prevent injuries and maximize gains.'
+      name: 'Alex Mitchell',
+      avatar: '/api/placeholder/64/64',
+      rank: 1,
+      tier: 'diamond',
+      totalPoints: 8750,
+      streakDays: 42,
+      badges: ['5K Champion', 'Iron Pumper', 'Early Bird'],
+      achievements: [
+        { title: 'Perfect Week', points: 500, date: '2025-02-20', icon: '🏆' },
+        { title: '10K Steps Daily', points: 300, date: '2025-02-18', icon: '👣' }
+      ],
+      pointBreakdown: {
+        strength: 3200,
+        cardio: 2800,
+        consistency: 1950,
+        progress: 800
+      },
+      recentActivities: [
+        { type: 'Deadlift PR', value: '350 lbs', points: 250, date: '2025-02-24' },
+        { type: 'Running', value: '10K', points: 200, date: '2025-02-22' }
+      ]
     },
     {
       id: 2,
-      title: 'Pre-Workout Nutrition',
-      category: 'nutrition',
-      duration: '12 min',
-      level: 'Intermediate',
-      image: '/api/placeholder/400/240',
-      views: '8.3K',
-      description: 'Learn what to eat before workouts for optimal performance and energy.'
+      name: 'Sarah Johnson',
+      avatar: '/api/placeholder/64/64',
+      rank: 2,
+      tier: 'platinum',
+      totalPoints: 8120,
+      streakDays: 35,
+      badges: ['Marathon Finisher', 'Nutrition Expert'],
+      achievements: [
+        { title: 'Running Streak', points: 450, date: '2025-02-22', icon: '🏃‍♀️' },
+        { title: 'Macro Perfect', points: 380, date: '2025-02-20', icon: '🥗' }
+      ],
+      pointBreakdown: {
+        strength: 2100,
+        cardio: 3500,
+        consistency: 1720,
+        progress: 800
+      },
+      recentActivities: [
+        { type: 'Half Marathon', value: '1:45:30', points: 350, date: '2025-02-23' },
+        { type: 'Yoga Session', value: '60 min', points: 120, date: '2025-02-21' }
+      ]
     },
     {
       id: 3,
-      title: '5-Minute Meditation',
-      category: 'mindfulness',
-      duration: '5 min',
-      level: 'Beginner',
-      image: '/api/placeholder/400/240',
-      views: '15.1K',
-      description: 'Quick meditation practice to center yourself before or after workouts.'
+      name: 'Carlos Rodriguez',
+      avatar: '/api/placeholder/64/64',
+      rank: 3,
+      tier: 'platinum',
+      totalPoints: 7890,
+      streakDays: 28,
+      badges: ['Muscle Builder', 'Perfect Form'],
+      achievements: [
+        { title: 'Bench Press King', points: 420, date: '2025-02-19', icon: '💪' },
+        { title: 'Transformation', points: 500, date: '2025-02-10', icon: '⚡' }
+      ],
+      pointBreakdown: {
+        strength: 3800,
+        cardio: 1200,
+        consistency: 1690,
+        progress: 1200
+      },
+      recentActivities: [
+        { type: 'Bench Press PR', value: '315 lbs', points: 280, date: '2025-02-23' },
+        { type: 'HIIT Workout', value: '45 min', points: 180, date: '2025-02-20' }
+      ]
     },
     {
       id: 4,
-      title: 'Foam Rolling Techniques',
-      category: 'recovery',
-      duration: '10 min',
-      level: 'Beginner',
-      image: '/api/placeholder/400/240',
-      views: '7.8K',
-      description: 'Effective foam rolling methods to release muscle tension and improve recovery.'
+      name: 'Emma Williams',
+      avatar: '/api/placeholder/64/64',
+      rank: 4,
+      tier: 'gold',
+      totalPoints: 7350,
+      streakDays: 21,
+      badges: ['Flexibility Master', 'Morning Warrior'],
+      achievements: [
+        { title: 'Consistency Queen', points: 380, date: '2025-02-15', icon: '👑' }
+      ],
+      pointBreakdown: {
+        strength: 2400,
+        cardio: 2200,
+        consistency: 1950,
+        progress: 800
+      },
+      recentActivities: [
+        { type: 'Pilates', value: '75 min', points: 150, date: '2025-02-24' },
+        { type: 'Swimming', value: '2000m', points: 220, date: '2025-02-22' }
+      ]
     },
     {
       id: 5,
-      title: 'Perfect Push-Up Guide',
-      category: 'technique',
-      duration: '7 min',
-      level: 'Beginner',
-      image: '/api/placeholder/400/240',
-      views: '20.3K',
-      description: 'Step-by-step guide to mastering push-ups for all fitness levels.'
+      name: 'Jordan Lee',
+      avatar: '/api/placeholder/64/64',
+      rank: 5,
+      tier: 'gold',
+      totalPoints: 6980,
+      streakDays: 18,
+      badges: ['Weight Loss Champion'],
+      achievements: [
+        { title: '-10kg Achievement', points: 700, date: '2025-02-10', icon: '⚖️' }
+      ],
+      pointBreakdown: {
+        strength: 1800,
+        cardio: 2500,
+        consistency: 1380,
+        progress: 1300
+      },
+      recentActivities: [
+        { type: 'Cycling', value: '30 miles', points: 240, date: '2025-02-23' },
+        { type: 'Weight Training', value: '60 min', points: 150, date: '2025-02-21' }
+      ]
     },
     {
       id: 6,
-      title: 'Protein Timing Strategy',
-      category: 'nutrition',
-      duration: '15 min',
-      level: 'Advanced',
-      image: '/api/placeholder/400/240',
-      views: '6.2K',
-      description: 'Advanced strategies for timing protein intake to maximize muscle growth.'
+      name: 'Michel Dubois',
+      avatar: '/api/placeholder/64/64',
+      rank: 6,
+      tier: 'silver',
+      totalPoints: 6250,
+      streakDays: 14,
+      badges: ['Nutrition Master'],
+      achievements: [
+        { title: 'Perfect Macros', points: 350, date: '2025-02-18', icon: '🍎' }
+      ],
+      pointBreakdown: {
+        strength: 2200,
+        cardio: 1800,
+        consistency: 1050,
+        progress: 1200
+      },
+      recentActivities: [
+        { type: 'CrossFit', value: '45 min', points: 200, date: '2025-02-24' },
+        { type: 'Running', value: '5K', points: 150, date: '2025-02-22' }
+      ]
     }
   ]
   
-  const filteredTutorials = selectedCategory === 'all' 
-    ? tutorials 
-    : tutorials.filter(tutorial => tutorial.category === selectedCategory)
-    
-  const featuredTutorial = tutorials[0]
+  // Filter users based on category
+  const filteredUsers = category === 'all' 
+    ? [...users].sort((a, b) => b.totalPoints - a.totalPoints) 
+    : [...users].sort((a, b) => b.pointBreakdown[category] - a.pointBreakdown[category])
+  
+  // Calculate position changes (simulating previous week's data)
+  useEffect(() => {
+    // In a real app, you would fetch previous positions from your backend
+  }, [timeframe, category])
+  
+  // Get tier color
+  const getTierColor = (tier) => {
+    switch(tier) {
+      case 'diamond': return 'from-blue-400 to-purple-500';
+      case 'platinum': return 'from-indigo-400 to-cyan-400';
+      case 'gold': return 'from-yellow-400 to-amber-500';
+      case 'silver': return 'from-gray-300 to-gray-400';
+      default: return 'from-gray-200 to-gray-300';
+    }
+  }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 min-h-screen">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Tutorials</h1>
-        <p className="mt-2 text-lg text-gray-600">Learn proper techniques and fitness knowledge</p>
+        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Fitness Leaderboard</h1>
+        <p className="mt-2 text-lg text-gray-600">Compete, achieve, and rise to the top</p>
       </div>
       
-      {/* Featured Tutorial */}
-      <div className="mb-12 bg-white shadow rounded-lg overflow-hidden">
-        <div className="sm:flex">
-          <div className="sm:w-1/2">
-            <img
-              src="/api/placeholder/600/400"
-              alt="Featured Tutorial"
-              className="h-full w-full object-cover"
-            />
-          </div>
-          <div className="p-6 sm:w-1/2 flex flex-col justify-center">
-            <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mb-3">
-              Featured
-            </span>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Master the Perfect Deadlift</h2>
-            <p className="text-gray-600 mb-6">
-              Learn the essential deadlift technique from our expert trainers. This comprehensive tutorial covers 
-              setup, execution, common mistakes, and variations for all fitness levels.
-            </p>
-            <div className="flex items-center mb-4">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-2">
-                Technique
-              </span>
-              <span className="text-sm text-gray-500">18 min • 35.7K views</span>
-            </div>
-            <button className="w-full sm:w-auto flex items-center justify-center px-5 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-blue-500 to-teal-400 hover:opacity-90 focus:outline-none">
-              Watch Tutorial
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      {/* Category Filter */}
-      <div className="mb-8">
-        <div className="flex items-center space-x-2 overflow-x-auto pb-4">
-          {categories.map((category) => (
+      {/* Filters Row */}
+      <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+        <div className="flex items-center space-x-2 overflow-x-auto pb-2">
+          {categories.map((cat) => (
             <button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.id)}
-              className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
-                selectedCategory === category.id
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+              key={cat.id}
+              onClick={() => setCategory(cat.id)}
+              className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+                category === cat.id
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 shadow-sm'
               }`}
             >
-              {category.name}
+              {cat.name}
+            </button>
+          ))}
+        </div>
+        
+        <div className="flex bg-white rounded-lg shadow-sm overflow-hidden">
+          {timeframes.map((time) => (
+            <button
+              key={time.id}
+              onClick={() => setTimeframe(time.id)}
+              className={`px-4 py-2 text-sm font-medium transition-all ${
+                timeframe === time.id
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              {time.name}
             </button>
           ))}
         </div>
       </div>
       
-      {/* Tutorials Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3">
-        {filteredTutorials.map((tutorial) => (
-          <div key={tutorial.id} className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
-            <div className="relative">
-              <img
-                src={tutorial.image}
-                alt={tutorial.title}
-                className="h-48 w-full object-cover"
-              />
-              <div className="absolute top-2 right-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  {tutorial.duration}
-                </span>
+      {/* Leaderboard */}
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
+        <div className="overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Streak</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Badges</th>
+                <th scope="col" className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredUsers.map((user, index) => (
+                <>
+                  <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${showDetails === user.id ? 'bg-blue-50' : ''}`}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex items-center">
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r ${getTierColor(user.tier)} text-white font-bold`}>
+                          {index + 1}
+                        </div>
+                        <div className="ml-2 text-xs text-gray-500">
+                          {Math.random() > 0.5 ? (
+                            <span className="text-green-500 flex items-center">
+                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                              </svg>
+                              {Math.floor(Math.random() * 3) + 1}
+                            </span>
+                          ) : index === 0 ? (
+                            <span className="text-gray-400">-</span>
+                          ) : (
+                            <span className="text-red-500 flex items-center">
+                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                              </svg>
+                              {Math.floor(Math.random() * 3) + 1}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10 relative">
+                          <img className="h-10 w-10 rounded-full" src={user.avatar} alt={user.name} />
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-r from-gray-100 to-gray-200 flex items-center justify-center">
+                            <div className={`w-4 h-4 rounded-full bg-gradient-to-r ${getTierColor(user.tier)}`}></div>
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                          <div className="flex items-center text-xs text-gray-500">
+                            <span className={`inline-block w-2 h-2 rounded-full bg-green-500 mr-1`}></span>
+                            <span>Active now</span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex flex-col">
+                        <div className="text-sm font-medium text-gray-900">
+                          {category === 'all' ? user.totalPoints.toLocaleString() : user.pointBreakdown[category].toLocaleString()}
+                        </div>
+                        {category === 'all' && (
+                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                            <div className="flex">
+                              <div className="bg-red-400 h-1.5 rounded-l-full" style={{ width: `${Math.round((user.pointBreakdown.strength / user.totalPoints) * 100)}%` }}></div>
+                              <div className="bg-blue-400 h-1.5" style={{ width: `${Math.round((user.pointBreakdown.cardio / user.totalPoints) * 100)}%` }}></div>
+                              <div className="bg-green-400 h-1.5" style={{ width: `${Math.round((user.pointBreakdown.consistency / user.totalPoints) * 100)}%` }}></div>
+                              <div className="bg-purple-400 h-1.5 rounded-r-full" style={{ width: `${Math.round((user.pointBreakdown.progress / user.totalPoints) * 100)}%` }}></div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 text-amber-600">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+                          </svg>
+                        </div>
+                        <span className="ml-2 text-sm font-medium text-gray-900">{user.streakDays} days</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex -space-x-1">
+                        {user.badges.slice(0, 3).map((badge, i) => (
+                          <div key={i} className="w-6 h-6 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs border-2 border-white" title={badge}>
+                            {badge[0]}
+                          </div>
+                        ))}
+                        {user.badges.length > 3 && (
+                          <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs border-2 border-white">
+                            +{user.badges.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => setShowDetails(showDetails === user.id ? null : user.id)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        {showDetails === user.id ? 'Hide' : 'Details'}
+                      </button>
+                    </td>
+                  </tr>
+                  
+                  {/* Expanded Details Row */}
+                  {showDetails === user.id && (
+                    <tr className="bg-blue-50">
+                      <td colSpan="6" className="px-6 py-4">
+                        <div className="flex flex-col space-y-4">
+                          {/* Point Breakdown */}
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-900 mb-2">Point Breakdown</h4>
+                            <div className="grid grid-cols-4 gap-4">
+                              <div className="bg-white p-3 rounded shadow-sm">
+                                <div className="text-xs text-gray-500">Strength</div>
+                                <div className="text-lg font-semibold">{user.pointBreakdown.strength.toLocaleString()}</div>
+                                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                  <div className="bg-red-400 h-1.5 rounded-full" style={{ width: `${Math.min(100, Math.round((user.pointBreakdown.strength / 4000) * 100))}%` }}></div>
+                                </div>
+                              </div>
+                              <div className="bg-white p-3 rounded shadow-sm">
+                                <div className="text-xs text-gray-500">Cardio</div>
+                                <div className="text-lg font-semibold">{user.pointBreakdown.cardio.toLocaleString()}</div>
+                                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                  <div className="bg-blue-400 h-1.5 rounded-full" style={{ width: `${Math.min(100, Math.round((user.pointBreakdown.cardio / 4000) * 100))}%` }}></div>
+                                </div>
+                              </div>
+                              <div className="bg-white p-3 rounded shadow-sm">
+                                <div className="text-xs text-gray-500">Consistency</div>
+                                <div className="text-lg font-semibold">{user.pointBreakdown.consistency.toLocaleString()}</div>
+                                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                  <div className="bg-green-400 h-1.5 rounded-full" style={{ width: `${Math.min(100, Math.round((user.pointBreakdown.consistency / 2000) * 100))}%` }}></div>
+                                </div>
+                              </div>
+                              <div className="bg-white p-3 rounded shadow-sm">
+                                <div className="text-xs text-gray-500">Progress</div>
+                                <div className="text-lg font-semibold">{user.pointBreakdown.progress.toLocaleString()}</div>
+                                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                  <div className="bg-purple-400 h-1.5 rounded-full" style={{ width: `${Math.min(100, Math.round((user.pointBreakdown.progress / 1500) * 100))}%` }}></div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Recent Activities and Achievements */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900 mb-2">Recent Activities</h4>
+                              <div className="space-y-2">
+                                {user.recentActivities.map((activity, i) => (
+                                  <div key={i} className="bg-white p-3 rounded shadow-sm">
+                                    <div className="flex justify-between">
+                                      <span className="text-sm font-medium">{activity.type}</span>
+                                      <span className="text-sm text-green-600">+{activity.points}</span>
+                                    </div>
+                                    <div className="flex justify-between mt-1">
+                                      <span className="text-xs text-gray-500">{activity.value}</span>
+                                      <span className="text-xs text-gray-500">{activity.date}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900 mb-2">Recent Achievements</h4>
+                              <div className="space-y-2">
+                                {user.achievements.map((achievement, i) => (
+                                  <div key={i} className="bg-white p-3 rounded shadow-sm">
+                                    <div className="flex items-center">
+                                      <span className="text-xl mr-2">{achievement.icon}</span>
+                                      <div>
+                                        <div className="text-sm font-medium">{achievement.title}</div>
+                                        <div className="flex justify-between mt-1">
+                                          <span className="text-xs text-green-600">+{achievement.points} points</span>
+                                          <span className="text-xs text-gray-500">{achievement.date}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      {/* Point System Explanation */}
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden p-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">FitScore Point System</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h4 className="text-sm font-medium text-gray-900 mb-2">How Points Are Earned</h4>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li className="flex items-start">
+                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-red-100 text-red-500 flex items-center justify-center mr-2 mt-0.5">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                  </svg>
+                </div>
+                <span><strong>Strength:</strong> Earn points for weight lifted, personal records, and completion of strength workouts</span>
+              </li>
+              <li className="flex items-start">
+                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center mr-2 mt-0.5">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                  </svg>
+                </div>
+                <span><strong>Cardio:</strong> Points based on distance, intensity, calories burned, and heart rate zones</span>
+              </li>
+              <li className="flex items-start">
+                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 text-green-500 flex items-center justify-center mr-2 mt-0.5">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                  </svg>
+                </div>
+                <span><strong>Consistency:</strong> Daily check-ins, streak bonuses, and completing scheduled workouts</span>
+              </li>
+              <li className="flex items-start">
+                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center mr-2 mt-0.5">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                  </svg>
+                </div>
+                <span><strong>Progress:</strong> Body composition improvements, skill advancements, and fitness test results</span>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-900 mb-2">Tiers and Rewards</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gradient-to-r from-blue-400 to-purple-500 p-3 rounded-lg text-white">
+                <div className="text-xs opacity-80">Diamond Tier</div>
+                <div className="text-sm font-bold">8,000+ points</div>
+                <div className="text-xs mt-1">Premium content access</div>
               </div>
-            </div>
-            <div className="p-5">
-              <h3 className="text-lg font-medium text-gray-900">{tutorial.title}</h3>
-              <div className="mt-2 flex items-center">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  tutorial.level === 'Beginner' ? 'bg-green-100 text-green-800' :
-                  tutorial.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {tutorial.level}
-                </span>
-                <span className="ml-auto text-sm text-gray-500">{tutorial.views} views</span>
+              <div className="bg-gradient-to-r from-indigo-400 to-cyan-400 p-3 rounded-lg text-white">
+                <div className="text-xs opacity-80">Platinum Tier</div>
+                <div className="text-sm font-bold">7,000-7,999 points</div>
+                <div className="text-xs mt-1">Personal trainer consult</div>
               </div>
-              <p className="mt-3 text-sm text-gray-500">{tutorial.description}</p>
-              <div className="mt-4">
-                <button className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-blue-500 to-teal-400 hover:opacity-90 focus:outline-none">
-                  Watch Tutorial
-                </button>
+              <div className="bg-gradient-to-r from-yellow-400 to-amber-500 p-3 rounded-lg text-white">
+                <div className="text-xs opacity-80">Gold Tier</div>
+                <div className="text-sm font-bold">5,000-6,999 points</div>
+                <div className="text-xs mt-1">Exclusive challenges</div>
+              </div>
+              <div className="bg-gradient-to-r from-gray-300 to-gray-400 p-3 rounded-lg text-white">
+                <div className="text-xs opacity-80">Silver Tier</div>
+                <div className="text-sm font-bold">2,000-4,999 points</div>
+                <div className="text-xs mt-1">Community features</div>
               </div>
             </div>
           </div>
-        ))}
-      </div>
-      
-      {filteredTutorials.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No tutorials found for the selected category.</p>
         </div>
-      )}
+      </div>
     </div>
   )
 }
