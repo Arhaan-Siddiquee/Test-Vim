@@ -73,66 +73,67 @@ const Workout = () => {
     : workouts.filter(workout => workout.category === selectedCategory)
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Workouts</h1>
-        <p className="mt-2 text-lg text-gray-600">Choose your workout and start your fitness journey</p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-gray-50 min-h-screen">
+      <div className="mb-10">
+        <h1 className="text-4xl font-bold text-gray-900">
+          Find Your <span className="text-[#48c4a4]">Perfect Workout</span>
+        </h1>
+        <p className="mt-3 text-lg text-gray-600">Choose your workout and start your fitness journey</p>
       </div>
       
       {/* Category Filter */}
-      <div className="mb-8">
-        <div className="sm:flex sm:items-center sm:justify-between">
-          <div className="flex items-center space-x-2 overflow-x-auto pb-4 sm:pb-0">
+      <div className="mb-10">
+        <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center space-x-3 overflow-x-auto pb-2 scrollbar-hide">
             {categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+                className={`px-5 py-2.5 text-sm font-medium rounded-full transition-all duration-300 ${
                   selectedCategory === category.id
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                    ? 'bg-[#48c4a4] text-white shadow-md'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-[#48c4a4]/30'
                 }`}
               >
                 {category.name}
               </button>
             ))}
           </div>
-          <div className="mt-4 sm:mt-0">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search workouts"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
+          <div className="relative w-full sm:w-64">
+            <input
+              type="text"
+              placeholder="Search workouts"
+              className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-full text-sm bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#48c4a4] focus:border-transparent transition-all duration-300"
+            />
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </div>
           </div>
         </div>
       </div>
       
       {/* Workout Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {filteredWorkouts.map((workout) => (
-          <div key={workout.id} className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
+          <div key={workout.id} className="bg-white overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="relative">
               <img
                 src={workout.image}
                 alt={workout.title}
-                className="h-48 w-full object-cover"
+                className="h-52 w-full object-cover"
               />
-              <div className="absolute top-2 right-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              <div className="absolute top-4 right-4">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#48c4a4]/90 text-white shadow-md">
                   {workout.duration}
                 </span>
               </div>
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
             </div>
-            <div className="p-5">
-              <h3 className="text-lg font-medium text-gray-900">{workout.title}</h3>
-              <div className="mt-2 flex items-center">
+            <div className="p-6">
+              <h3 className="text-xl font-semibold text-gray-900">{workout.title}</h3>
+              <div className="mt-3 flex items-center space-x-2">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                   workout.level === 'Beginner' ? 'bg-green-100 text-green-800' :
                   workout.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-800' :
@@ -140,13 +141,17 @@ const Workout = () => {
                 }`}>
                   {workout.level}
                 </span>
-                <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#48c4a4]/10 text-[#48c4a4]">
                   {categories.find(c => c.id === workout.category)?.name}
                 </span>
               </div>
-              <p className="mt-3 text-sm text-gray-500">{workout.description}</p>
-              <div className="mt-4">
-                <button className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-blue-500 to-teal-400 hover:opacity-90 focus:outline-none">
+              <p className="mt-4 text-sm text-gray-600 leading-relaxed">{workout.description}</p>
+              <div className="mt-6">
+                <button className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-full shadow-md text-white bg-[#48c4a4] hover:bg-[#3aaa8d] transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#48c4a4] transform hover:scale-[1.02]">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                   Start Workout
                 </button>
               </div>
@@ -156,8 +161,14 @@ const Workout = () => {
       </div>
       
       {filteredWorkouts.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No workouts found for the selected category.</p>
+        <div className="flex flex-col items-center justify-center py-16 px-4">
+          <div className="w-16 h-16 bg-[#48c4a4]/10 rounded-full flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#48c4a4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <p className="text-gray-700 text-lg font-medium">No workouts found</p>
+          <p className="text-gray-500 mt-2 text-center">Try selecting a different category or modifying your search.</p>
         </div>
       )}
     </div>

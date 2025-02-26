@@ -188,7 +188,7 @@ const Tutorials = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 min-h-screen">
       <div className="mb-8">
-        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Fitness Leaderboard</h1>
+        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-[#48c4a4]">Fitness Leaderboard</h1>
         <p className="mt-2 text-lg text-gray-600">Compete, achieve, and rise to the top</p>
       </div>
       
@@ -201,7 +201,7 @@ const Tutorials = () => {
               onClick={() => setCategory(cat.id)}
               className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
                 category === cat.id
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
+                  ? 'bg-[#48c4a4] text-white shadow-md'
                   : 'bg-white text-gray-700 hover:bg-gray-100 shadow-sm'
               }`}
             >
@@ -217,7 +217,7 @@ const Tutorials = () => {
               onClick={() => setTimeframe(time.id)}
               className={`px-4 py-2 text-sm font-medium transition-all ${
                 timeframe === time.id
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white'
+                  ? 'bg-[#48c4a4] text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-100'
               }`}
             >
@@ -244,7 +244,7 @@ const Tutorials = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredUsers.map((user, index) => (
                 <>
-                  <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${showDetails === user.id ? 'bg-blue-50' : ''}`}>
+                  <tr key={user.id} className={`hover:bg-gray-50 transition-colors ${showDetails === user.id ? 'bg-green-100' : ''}`}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center">
                         <div className={`flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r ${getTierColor(user.tier)} text-white font-bold`}>
@@ -282,7 +282,7 @@ const Tutorials = () => {
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{user.name}</div>
                           <div className="flex items-center text-xs text-gray-500">
-                            <span className={`inline-block w-2 h-2 rounded-full bg-green-500 mr-1`}></span>
+                            <span className={`inline-block w-2 h-2 rounded-full bg-green-100 mr-1`}></span>
                             <span>Active now</span>
                           </div>
                         </div>
@@ -332,7 +332,7 @@ const Tutorials = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => setShowDetails(showDetails === user.id ? null : user.id)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-[#48c4a4] hover:text-green-800"
                       >
                         {showDetails === user.id ? 'Hide' : 'Details'}
                       </button>
@@ -341,7 +341,7 @@ const Tutorials = () => {
                   
                   {/* Expanded Details Row */}
                   {showDetails === user.id && (
-                    <tr className="bg-blue-50">
+                    <tr className="bg-green-200">
                       <td colSpan="6" className="px-6 py-4">
                         <div className="flex flex-col space-y-4">
                           {/* Point Breakdown */}
