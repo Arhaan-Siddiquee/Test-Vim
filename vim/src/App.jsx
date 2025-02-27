@@ -17,9 +17,8 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/workout" element={<Workout />} />
           <Route path="/tutorials" element={<Tutorials />} />
-          <Route path="/gamify" element={<Gamify />} />
+          <Route path="/gamify" element={<Gamify />} />    
           <Route path="/diet-plan" element={<DietPlan />} />
-          <Route path="/profile" element={<Profile />} />
         </Routes>
       </main>
       <Footer />

@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import * as tf from '@tensorflow/tfjs';
+import * as poseDetection from '@tensorflow-models/pose-detection';
 
 const Gamify = () => {
   const videoRef = useRef(null);
@@ -12,6 +13,50 @@ const Gamify = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [feedback, setFeedback] = useState('');
   const [showManualMode, setShowManualMode] = useState(false);
+  const [detector, setDetector] = useState(null);
+  const [exercise, setExercise] = useState('push-ups');
+  
+  // References for exercise tracking
+  const poseHistoryRef = useRef([]);
+  const countingStateRef = useRef('up');
+  const confidenceThresholdRef = useRef(0.5);
+  const frameCountRef = useRef(0);
+
+  // Load TF and PoseNet models
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        setLoadingState('models');
+        setLoadingProgress(10);
+        
+        // Load TensorFlow.js
+        await tf.ready();
+        setLoadingProgress(30);
+        
+        // Load PoseDetection model (MoveNet is lighter than BlazePose)
+        const detectorConfig = {
+          modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
+          enableSmoothing: true
+        };
+        
+        const detector = await poseDetection.createDetector(
+          poseDetection.SupportedModels.MoveNet, 
+          detectorConfig
+        );
+        
+        setDetector(detector);
+        setLoadingProgress(40);
+        
+        console.log('Models loaded successfully');
+      } catch (error) {
+        console.error('Error loading models:', error);
+        setErrorMessage(`Failed to load pose detection: ${error.message}. Try using manual mode.`);
+        setShowManualMode(true);
+      }
+    };
+    
+    loadModels();
+  }, []);
 
   // Setup webcam with better error handling
   useEffect(() => {
@@ -23,6 +68,7 @@ const Gamify = () => {
       
       try {
         setLoadingState('camera');
+        setLoadingProgress(50);
         
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { 
@@ -38,8 +84,13 @@ const Gamify = () => {
           videoRef.current.onloadedmetadata = () => {
             videoRef.current.play();
             setIsWebcamReady(true);
-            setLoadingProgress(50);
-            startSimpleTracking();
+            setLoadingProgress(80);
+            
+            // Initialize canvas
+            if (canvasRef.current) {
+              canvasRef.current.width = videoRef.current.videoWidth;
+              canvasRef.current.height = videoRef.current.videoHeight;
+            }
           };
         }
       } catch (error) {
@@ -64,87 +115,327 @@ const Gamify = () => {
     };
   }, []);
 
-  // Simple tracking for devices that may have issues with TensorFlow.js
-  const startSimpleTracking = () => {
-    setLoadingState('ready');
-    setLoadingProgress(100);
+  // Start pose detection and tracking when everything is ready
+  useEffect(() => {
+    if (isWebcamReady && detector && loadingState !== 'ready') {
+      setLoadingState('ready');
+      setLoadingProgress(100);
+    }
+  }, [isWebcamReady, detector, loadingState]);
+
+  // Main pose detection and exercise counting logic
+  useEffect(() => {
+    if (!isTracking || !detector || !isWebcamReady || !canvasRef.current) return;
     
-    // Simple motion detection using canvas comparison
-    if (canvasRef.current && videoRef.current && isWebcamReady) {
-      const ctx = canvasRef.current.getContext('2d');
-      const width = videoRef.current.videoWidth;
-      const height = videoRef.current.videoHeight;
+    let animationFrameId;
+    
+    const detectPose = async () => {
+      if (!videoRef.current || !canvasRef.current) return;
       
-      canvasRef.current.width = width;
-      canvasRef.current.height = height;
-      
-      let previousImageData = null;
-      let motionCounter = 0;
-      let motionState = 'up';
-      let motionThreshold = 15; // Adjust based on testing
-      
-      const detectMotion = () => {
-        if (!isTracking) return;
-        
-        ctx.drawImage(videoRef.current, 0, 0, width, height);
-        const currentImageData = ctx.getImageData(0, 0, width, height);
-        
-        // Draw person outline for visual feedback
-        ctx.strokeStyle = 'aqua';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(width * 0.25, height * 0.2, width * 0.5, height * 0.6);
-        
-        if (previousImageData) {
-          const motionScore = calculateMotionScore(
-            previousImageData.data, 
-            currentImageData.data
-          );
-          
-          // Display motion score for debugging
-          ctx.fillStyle = 'white';
-          ctx.font = '16px Arial';
-          ctx.fillText(`Motion: ${motionScore.toFixed(2)}`, 10, 30);
-          
-          // Track push-up motion
-          if (motionState === 'up' && motionScore > motionThreshold) {
-            motionState = 'down';
-            setFeedback('Going down... good!');
-          } else if (motionState === 'down' && motionScore > motionThreshold) {
-            motionState = 'up';
-            setExerciseCount(prev => prev + 1);
-            setFeedback('Push-up completed! Great job!');
-          }
+      try {
+        // Only run detection every 2 frames for performance
+        frameCountRef.current += 1;
+        if (frameCountRef.current % 2 !== 0) {
+          animationFrameId = requestAnimationFrame(detectPose);
+          return;
         }
         
-        previousImageData = currentImageData;
+        // Detect poses
+        const poses = await detector.estimatePoses(videoRef.current);
         
-        // Continue detection loop
-        requestAnimationFrame(detectMotion);
-      };
+        // Process the detected pose
+        if (poses && poses.length > 0) {
+          const pose = poses[0];
+          processExercise(pose);
+          drawPose(pose);
+        } else {
+          setFeedback('No pose detected. Make sure your body is visible.');
+        }
+      } catch (error) {
+        console.error('Pose detection error:', error);
+      }
       
-      detectMotion();
+      animationFrameId = requestAnimationFrame(detectPose);
+    };
+    
+    detectPose();
+    
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [isTracking, detector, isWebcamReady, exercise]);
+
+  // Process the detected pose and count exercises
+  const processExercise = (pose) => {
+    if (!pose || !pose.keypoints) return;
+    
+    // Add current pose to history
+    poseHistoryRef.current.push(pose);
+    
+    // Keep only the last 10 frames
+    if (poseHistoryRef.current.length > 10) {
+      poseHistoryRef.current.shift();
+    }
+    
+    // Process based on exercise type
+    if (exercise === 'push-ups') {
+      countPushups(pose);
+    } else if (exercise === 'squats') {
+      countSquats(pose);
     }
   };
-
-  // Simple motion detection algorithm
-  const calculateMotionScore = (previous, current) => {
-    let score = 0;
-    const sampleSize = previous.length / 40; // Sample every Nth pixel for performance
+  
+  // Count push-ups based on pose
+  const countPushups = (pose) => {
+    // Get relevant keypoints
+    const findKeypoint = (name) => pose.keypoints.find(kp => kp.name === name);
     
-    for (let i = 0; i < previous.length; i += sampleSize) {
-      const pixelDiff = Math.abs(previous[i] - current[i]) + 
-                       Math.abs(previous[i+1] - current[i+1]) + 
-                       Math.abs(previous[i+2] - current[i+2]);
-      score += pixelDiff;
+    const nose = findKeypoint('nose');
+    const leftShoulder = findKeypoint('left_shoulder');
+    const rightShoulder = findKeypoint('right_shoulder');
+    const leftElbow = findKeypoint('left_elbow');
+    const rightElbow = findKeypoint('right_elbow');
+    const leftWrist = findKeypoint('left_wrist');
+    const rightWrist = findKeypoint('right_wrist');
+    
+    // Check if all keypoints are detected with good confidence
+    const keypoints = [nose, leftShoulder, rightShoulder, leftElbow, rightElbow, leftWrist, rightWrist];
+    const allDetected = keypoints.every(kp => kp && kp.score > confidenceThresholdRef.current);
+    
+    if (!allDetected) {
+      setFeedback('Position yourself better - make sure your upper body is visible');
+      return;
     }
     
-    return score / (previous.length / sampleSize);
+    // Calculate average shoulder height
+    const shoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+    
+    // Use nose position relative to shoulders to determine push-up state
+    // In up position, nose is higher above shoulders
+    // In down position, nose is closer to shoulders
+    const noseToShoulderDist = shoulderY - nose.y;
+    
+    // Normalize by using distance between shoulders to account for different camera distances
+    const shoulderDist = Math.sqrt(
+      Math.pow(rightShoulder.x - leftShoulder.x, 2) + 
+      Math.pow(rightShoulder.y - leftShoulder.y, 2)
+    );
+    
+    const normalizedDist = noseToShoulderDist / shoulderDist;
+    
+    // Determine push-up state
+    // These thresholds may need adjustment based on testing
+    const upThreshold = 1.2;
+    const downThreshold = 0.6;
+    
+    if (countingStateRef.current === 'up' && normalizedDist < downThreshold) {
+      countingStateRef.current = 'down';
+      setFeedback('Good! Now push back up');
+    } else if (countingStateRef.current === 'down' && normalizedDist > upThreshold) {
+      countingStateRef.current = 'up';
+      setExerciseCount(prev => prev + 1);
+      setFeedback('Push-up completed! Great job!');
+    }
+  };
+  
+  // Count squats based on pose
+  const countSquats = (pose) => {
+    // Get relevant keypoints
+    const findKeypoint = (name) => pose.keypoints.find(kp => kp.name === name);
+    
+    const leftHip = findKeypoint('left_hip');
+    const rightHip = findKeypoint('right_hip');
+    const leftKnee = findKeypoint('left_knee');
+    const rightKnee = findKeypoint('right_knee');
+    const leftAnkle = findKeypoint('left_ankle');
+    const rightAnkle = findKeypoint('right_ankle');
+    
+    // Check if all keypoints are detected with good confidence
+    const keypoints = [leftHip, rightHip, leftKnee, rightKnee, leftAnkle, rightAnkle];
+    const allDetected = keypoints.every(kp => kp && kp.score > confidenceThresholdRef.current);
+    
+    if (!allDetected) {
+      setFeedback('Position yourself better - make sure your lower body is visible');
+      return;
+    }
+    
+    // Calculate knee angles to determine squat position
+    const leftKneeAngle = calculateAngle(
+      [leftHip.x, leftHip.y],
+      [leftKnee.x, leftKnee.y],
+      [leftAnkle.x, leftAnkle.y]
+    );
+    
+    const rightKneeAngle = calculateAngle(
+      [rightHip.x, rightHip.y],
+      [rightKnee.x, rightKnee.y],
+      [rightAnkle.x, rightAnkle.y]
+    );
+    
+    // Average both knee angles
+    const avgKneeAngle = (leftKneeAngle + rightKneeAngle) / 2;
+    
+    // Determine squat state
+    // Standing straight: knee angle is around 170-180 degrees
+    // Squatting: knee angle is around 90-110 degrees
+    const standingThreshold = 160;
+    const squattingThreshold = 120;
+    
+    if (countingStateRef.current === 'up' && avgKneeAngle < squattingThreshold) {
+      countingStateRef.current = 'down';
+      setFeedback('Good squat position! Now stand back up');
+    } else if (countingStateRef.current === 'down' && avgKneeAngle > standingThreshold) {
+      countingStateRef.current = 'up';
+      setExerciseCount(prev => prev + 1);
+      setFeedback('Squat completed! Great job!');
+    }
+  };
+  
+  // Calculate angle between three points (used for joint angles)
+  const calculateAngle = (p1, p2, p3) => {
+    const radians = Math.atan2(p3[1] - p2[1], p3[0] - p2[0]) - 
+                    Math.atan2(p1[1] - p2[1], p1[0] - p2[0]);
+                    
+    let angle = Math.abs(radians * 180.0 / Math.PI);
+    
+    if (angle > 180.0) {
+      angle = 360.0 - angle;
+    }
+    
+    return angle;
+  };
+
+  // Draw the detected pose on canvas
+  const drawPose = (pose) => {
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    
+    // Draw video frame first (comment out for transparent background)
+    ctx.drawImage(videoRef.current, 0, 0);
+    
+    // Draw keypoints
+    if (pose.keypoints) {
+      // Draw connections first so they appear under the keypoints
+      drawConnections(ctx, pose.keypoints);
+      
+      // Draw keypoints
+      pose.keypoints.forEach(keypoint => {
+        if (keypoint.score > confidenceThresholdRef.current) {
+          const { x, y } = keypoint;
+          
+          // Outer circle (white)
+          ctx.beginPath();
+          ctx.arc(x, y, 6, 0, 2 * Math.PI);
+          ctx.fillStyle = 'white';
+          ctx.fill();
+          
+          // Inner circle (colored by keypoint type)
+          ctx.beginPath();
+          ctx.arc(x, y, 4, 0, 2 * Math.PI);
+          
+          // Color based on keypoint type
+          if (keypoint.name && keypoint.name.includes('face')) {
+            ctx.fillStyle = '#ff0000'; // Red for face
+          } else if (keypoint.name && (keypoint.name.includes('shoulder') || keypoint.name.includes('hip'))) {
+            ctx.fillStyle = '#00ff00'; // Green for torso connections
+          } else if (keypoint.name && (keypoint.name.includes('elbow') || keypoint.name.includes('wrist'))) {
+            ctx.fillStyle = '#ffff00'; // Yellow for arms
+          } else if (keypoint.name && (keypoint.name.includes('knee') || keypoint.name.includes('ankle'))) {
+            ctx.fillStyle = '#00ffff'; // Cyan for legs
+          } else {
+            ctx.fillStyle = '#ff00ff'; // Magenta for other
+          }
+          
+          ctx.fill();
+        }
+      });
+    }
+    
+    // Draw exercise-specific guides
+    if (exercise === 'push-ups') {
+      // Draw guide for push-up position
+      ctx.strokeStyle = 'aqua';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      
+      // Draw a horizontal line at good push-up height
+      const height = canvasRef.current.height;
+      ctx.beginPath();
+      ctx.moveTo(0, height * 0.6);
+      ctx.lineTo(canvasRef.current.width, height * 0.6);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else if (exercise === 'squats') {
+      // Draw guide for squat depth
+      ctx.strokeStyle = 'aqua';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      
+      // Draw a horizontal line at good squat depth
+      const height = canvasRef.current.height;
+      ctx.beginPath();
+      ctx.moveTo(0, height * 0.7);
+      ctx.lineTo(canvasRef.current.width, height * 0.7);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    
+    // Draw state and rep count
+    ctx.font = '20px Arial';
+    ctx.fillStyle = 'white';
+    ctx.fillText(`State: ${countingStateRef.current.toUpperCase()}`, 10, 30);
+    ctx.fillText(`Reps: ${exerciseCount}`, 10, 60);
+  };
+  
+  // Draw connections between keypoints
+  const drawConnections = (ctx, keypoints) => {
+    // Define connections between keypoints for a simplified skeleton
+    const connections = [
+      ['nose', 'left_eye'], ['nose', 'right_eye'],
+      ['left_eye', 'left_ear'], ['right_eye', 'right_ear'],
+      ['nose', 'left_shoulder'], ['nose', 'right_shoulder'],
+      ['left_shoulder', 'left_elbow'], ['right_shoulder', 'right_elbow'],
+      ['left_elbow', 'left_wrist'], ['right_elbow', 'right_wrist'],
+      ['left_shoulder', 'right_shoulder'],
+      ['left_shoulder', 'left_hip'], ['right_shoulder', 'right_hip'],
+      ['left_hip', 'right_hip'],
+      ['left_hip', 'left_knee'], ['right_hip', 'right_knee'],
+      ['left_knee', 'left_ankle'], ['right_knee', 'right_ankle']
+    ];
+    
+    // Create a map for quick lookup
+    const keypointMap = {};
+    keypoints.forEach(keypoint => {
+      if (keypoint.name) {
+        keypointMap[keypoint.name] = keypoint;
+      }
+    });
+    
+    // Draw the connections
+    ctx.strokeStyle = 'aqua';
+    ctx.lineWidth = 3;
+    
+    connections.forEach(([startName, endName]) => {
+      const startPoint = keypointMap[startName];
+      const endPoint = keypointMap[endName];
+      
+      if (startPoint && endPoint && 
+          startPoint.score > confidenceThresholdRef.current && 
+          endPoint.score > confidenceThresholdRef.current) {
+        ctx.beginPath();
+        ctx.moveTo(startPoint.x, startPoint.y);
+        ctx.lineTo(endPoint.x, endPoint.y);
+        ctx.stroke();
+      }
+    });
   };
 
   // Manual tracking functions
   const handleManualCount = () => {
     setExerciseCount(prev => prev + 1);
-    setFeedback('Push-up counted!');
+    setFeedback(`${exercise.charAt(0).toUpperCase() + exercise.slice(1)} counted!`);
   };
 
   const toggleTracking = () => {
@@ -155,18 +446,28 @@ const Gamify = () => {
   const resetStats = () => {
     setExerciseCount(0);
     setFeedback('Stats reset');
+    countingStateRef.current = 'up'; // Reset the counting state
+  };
+  
+  // Change exercise type
+  const changeExercise = (newExercise) => {
+    setExercise(newExercise);
+    resetStats();
+    setFeedback(`Exercise changed to ${newExercise}`);
   };
 
   // Render loading state UI
   const renderLoadingState = () => {
-    if (loadingState === 'initial' || loadingState === 'camera') {
+    if (loadingState !== 'ready') {
+      let loadingMessage = 'Initializing...';
+      if (loadingState === 'models') loadingMessage = 'Loading pose detection models...';
+      if (loadingState === 'camera') loadingMessage = 'Accessing camera...';
+      
       return (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30">
           <div className="text-center max-w-md px-6">
             <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-white text-lg mb-4">
-              {loadingState === 'initial' ? 'Initializing...' : 'Accessing camera...'}
-            </p>
+            <p className="text-white text-lg mb-4">{loadingMessage}</p>
             <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-blue-500"
@@ -191,7 +492,7 @@ const Gamify = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Camera Error</h3>
+            <h3 className="text-xl font-bold text-white mb-2">Error</h3>
             <p className="text-gray-300 mb-6">{errorMessage}</p>
             {showManualMode && (
               <button 
@@ -228,7 +529,15 @@ const Gamify = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-700 rounded-lg p-3 text-center">
                   <p className="text-sm text-gray-400">Exercise</p>
-                  <p className="text-xl font-bold text-blue-400">Push-ups</p>
+                  <select 
+                    value={exercise}
+                    onChange={(e) => changeExercise(e.target.value)}
+                    className="text-xl font-bold text-blue-400 bg-transparent border-none focus:outline-none cursor-pointer"
+                    disabled={isTracking}
+                  >
+                    <option value="push-ups">Push-ups</option>
+                    <option value="squats">Squats</option>
+                  </select>
                 </div>
                 
                 <div className="bg-gray-700 rounded-lg p-3 text-center">
@@ -265,7 +574,7 @@ const Gamify = () => {
                     onClick={handleManualCount}
                     className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-bold transition-colors mt-4"
                   >
-                    Count Push-up Manually
+                    Count {exercise.charAt(0).toUpperCase() + exercise.slice(1)} Manually
                   </button>
                 )}
               </div>
@@ -273,12 +582,23 @@ const Gamify = () => {
             
             <div>
               <h2 className="text-xl font-bold mb-3">Tips</h2>
-              <ul className="list-disc pl-5 space-y-2 text-gray-300">
-                <li>Face the camera from the side view</li>
-                <li>Ensure good lighting in your room</li>
-                <li>Keep your entire body visible in frame</li>
-                <li>Maintain proper form throughout</li>
-              </ul>
+              {exercise === 'push-ups' ? (
+                <ul className="list-disc pl-5 space-y-2 text-gray-300">
+                  <li>Face the camera from the side view</li>
+                  <li>Make sure your upper body is visible</li>
+                  <li>Keep your back straight during pushups</li>
+                  <li>Go all the way down and all the way up</li>
+                  <li>Maintain a steady pace</li>
+                </ul>
+              ) : (
+                <ul className="list-disc pl-5 space-y-2 text-gray-300">
+                  <li>Face the camera from the side view</li>
+                  <li>Make sure your lower body is visible</li>
+                  <li>Keep your back straight during squats</li>
+                  <li>Aim for 90 degree knee bend at bottom position</li>
+                  <li>Keep weight in your heels</li>
+                </ul>
+              )}
             </div>
           </div>
           
@@ -316,7 +636,7 @@ const Gamify = () => {
                     <div className="absolute top-4 right-4 z-20">
                       <div className="bg-black/60 text-white px-4 py-2 rounded-lg">
                         <span className="text-3xl font-bold">{exerciseCount}</span>
-                        <span className="ml-2">Push-ups</span>
+                        <span className="ml-2">{exercise.charAt(0).toUpperCase() + exercise.slice(1)}</span>
                       </div>
                     </div>
                     
@@ -336,7 +656,7 @@ const Gamify = () => {
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
                     <div className="text-center">
                       <h3 className="text-xl font-bold text-white mb-2">Manual Tracking Mode</h3>
-                      <p className="text-white mb-4">Press the button to count your push-ups</p>
+                      <p className="text-white mb-4">Press the button to count your {exercise}</p>
                     </div>
                   </div>
                 )}
@@ -353,7 +673,7 @@ const Gamify = () => {
                 </div>
                 <div className="flex justify-between text-sm mt-1">
                   <span>0</span>
-                  <span>Goal: 20 push-ups</span>
+                  <span>Goal: 20 {exercise}</span>
                 </div>
               </div>
               
@@ -361,10 +681,11 @@ const Gamify = () => {
               <div className="mt-6 bg-gray-700 p-4 rounded-lg">
                 <h3 className="text-lg font-bold mb-2">Quick Troubleshooting</h3>
                 <div className="space-y-2 text-sm text-gray-300">
-                  <p>• If tracking is slow, try closing other browser tabs</p>
-                  <p>• Make sure you're in a well-lit environment</p>
-                  <p>• If camera doesn't load, try refreshing the page</p>
-                  <p>• For best results, position camera at waist height</p>
+                  <p>• If tracking is inaccurate, try better lighting</p>
+                  <p>• Make sure you're visible in the frame</p>
+                  <p>• Side view works best for exercise detection</p>
+                  <p>• Move slower for better tracking</p>
+                  <p>• Stay in frame throughout the entire exercise</p>
                 </div>
               </div>
             </div>
@@ -374,4 +695,5 @@ const Gamify = () => {
     </div>
   );
 };
+
 export default Gamify;

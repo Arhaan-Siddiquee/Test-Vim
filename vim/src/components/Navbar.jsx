@@ -1,245 +1,214 @@
 import { Link, useLocation } from 'react-router-dom'
-import React, { useState } from 'react';
+import { useState, useRef, useEffect } from 'react'
 
-const Profile = () => {
-  // Sample user data (in a real app, this would come from an API or context)
-  const [userData, setUserData] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    profileImage: '/api/placeholder/150/150',
-    stats: {
-      workoutsCompleted: 87,
-      streakDays: 14,
-      caloriesBurned: 12540,
-      hoursActive: 45
-    },
-    goals: [
-      { id: 1, title: 'Lose 5kg', progress: 60, target: '5kg', current: '3kg' },
-      { id: 2, title: 'Run 100km', progress: 75, target: '100km', current: '75km' },
-      { id: 3, title: 'Drink 2L water daily', progress: 90, target: '60L', current: '54L' }
-    ],
-    preferences: {
-      notifications: true,
-      darkMode: false,
-      metricSystem: 'metric'
+const Navbar = () => {
+  const location = useLocation()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const profileMenuRef = useRef(null)
+
+  const navItems = [
+    { name: 'Dashboard', path: '/' },
+    { name: 'Workout', path: '/workout' },
+    { name: 'Tutorials', path: '/tutorials' },
+    { name: 'Diet Plan', path: '/diet-plan' },
+    { name: 'Gamify', path: '/gamify' }, // Fixed missing comma
+    { name: 'Profile', path: '/profile' }
+  ]
+
+  const isActive = (path) => {
+    return location.pathname === path
+  }
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setIsProfileMenuOpen(false)
+      }
     }
-  });
-
-  // State for edit mode
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedUserData, setEditedUserData] = useState({...userData});
-
-  // Handle form change
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
     
-    if (name.includes('.')) {
-      const [section, field] = name.split('.');
-      setEditedUserData({
-        ...editedUserData,
-        [section]: {
-          ...editedUserData[section],
-          [field]: type === 'checkbox' ? checked : value
-        }
-      });
-    } else {
-      setEditedUserData({
-        ...editedUserData,
-        [name]: type === 'checkbox' ? checked : value
-      });
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
     }
-  };
-
-  // Save profile changes
-  const handleSave = () => {
-    setUserData(editedUserData);
-    setIsEditing(false);
-  };
-
-  // Cancel editing
-  const handleCancel = () => {
-    setEditedUserData({...userData});
-    setIsEditing(false);
-  };
+  }, [])
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        {/* Profile Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-teal-400 px-6 py-8">
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="mb-4 md:mb-0 md:mr-6">
-              <img 
-                src={userData.profileImage} 
-                alt="Profile" 
-                className="h-32 w-32 rounded-full border-4 border-white object-cover"
-              />
+    <nav className="bg-white shadow-sm sticky top-0 z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex items-center">
+            <div className="flex-shrink-0 flex items-center">
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-teal-400 bg-clip-text text-transparent">
+                FitnessPro
+              </span>
             </div>
-            <div className="text-center md:text-left">
-              <h1 className="text-2xl font-bold text-white">{userData.name}</h1>
-              <p className="text-blue-100">{userData.email}</p>
-              <div className="mt-2">
-                {!isEditing ? (
-                  <button 
-                    onClick={() => setIsEditing(true)}
-                    className="bg-white text-blue-600 px-4 py-2 rounded-md font-medium text-sm hover:bg-blue-50 transition-colors"
+          </div>
+          
+          {/* Desktop menu */}
+          <div className="hidden md:flex items-center space-x-4">
+            {navItems.map((item) => (
+              item.name !== 'Profile' && (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 ease-in-out ${
+                    isActive(item.path)
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              )
+            ))}
+            
+            {/* Profile dropdown */}
+            <div className="relative ml-3" ref={profileMenuRef}>
+              <div>
+                <button 
+                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 ease-in-out text-gray-600 hover:bg-gray-50 hover:text-gray-900 focus:outline-none"
+                >
+                  <span>Alex</span>
+                  <img 
+                    className="h-8 w-8 rounded-full object-cover"
+                    src="/api/placeholder/40/40" 
+                    alt="Profile" 
+                  />
+                  <svg 
+                    className={`h-4 w-4 transition-transform duration-200 ${isProfileMenuOpen ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
                   >
-                    Edit Profile
-                  </button>
-                ) : (
-                  <div className="flex space-x-2">
-                    <button 
-                      onClick={handleSave}
-                      className="bg-white text-blue-600 px-4 py-2 rounded-md font-medium text-sm hover:bg-blue-50 transition-colors"
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
+              
+              {isProfileMenuOpen && (
+                <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                  <div className="py-1">
+                    <Link 
+                      to="/profile" 
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsProfileMenuOpen(false)}
                     >
-                      Save
-                    </button>
-                    <button 
-                      onClick={handleCancel}
-                      className="bg-blue-700 text-white px-4 py-2 rounded-md font-medium text-sm hover:bg-blue-800 transition-colors"
+                      Your Profile
+                    </Link>
+                    <Link 
+                      to="/settings" 
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsProfileMenuOpen(false)}
                     >
-                      Cancel
+                      Settings
+                    </Link>
+                    <Link 
+                      to="/activity" 
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                    >
+                      Activity Log
+                    </Link>
+                    <div className="border-t border-gray-100"></div>
+                    <button 
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                    >
+                      Sign Out
                     </button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
+
+            <button className="ml-4 px-4 py-2 rounded-md bg-gradient-to-r from-blue-500 to-teal-400 text-white font-medium text-sm hover:opacity-90 transition-opacity duration-150 ease-in-out">
+              Sign In
+            </button>
           </div>
-        </div>
-        
-        {/* Stats Overview */}
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Stats Overview</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg text-center">
-              <p className="text-blue-600 text-2xl font-bold">{userData.stats.workoutsCompleted}</p>
-              <p className="text-gray-600">Workouts</p>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg text-center">
-              <p className="text-green-600 text-2xl font-bold">{userData.stats.streakDays}</p>
-              <p className="text-gray-600">Day Streak</p>
-            </div>
-            <div className="bg-orange-50 p-4 rounded-lg text-center">
-              <p className="text-orange-600 text-2xl font-bold">{userData.stats.caloriesBurned}</p>
-              <p className="text-gray-600">Calories Burned</p>
-            </div>
-            <div className="bg-purple-50 p-4 rounded-lg text-center">
-              <p className="text-purple-600 text-2xl font-bold">{userData.stats.hoursActive}</p>
-              <p className="text-gray-600">Hours Active</p>
-            </div>
-          </div>
-        </div>
-        
-        {/* Fitness Goals */}
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Fitness Goals</h2>
-          {userData.goals.map(goal => (
-            <div key={goal.id} className="mb-4">
-              <div className="flex justify-between mb-1">
-                <span className="text-gray-700">{goal.title}</span>
-                <span className="text-gray-500">{goal.current} / {goal.target}</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div 
-                  className="bg-gradient-to-r from-blue-500 to-teal-400 h-2.5 rounded-full" 
-                  style={{ width: `${goal.progress}%` }}
-                ></div>
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        {/* Account Settings */}
-        <div className="p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Account Settings</h2>
           
-          {!isEditing ? (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center pb-2 border-b">
-                <span className="text-gray-700">Notifications</span>
-                <span className="text-gray-500">{userData.preferences.notifications ? 'Enabled' : 'Disabled'}</span>
-              </div>
-              <div className="flex justify-between items-center pb-2 border-b">
-                <span className="text-gray-700">Dark Mode</span>
-                <span className="text-gray-500">{userData.preferences.darkMode ? 'Enabled' : 'Disabled'}</span>
-              </div>
-              <div className="flex justify-between items-center pb-2 border-b">
-                <span className="text-gray-700">Measurement System</span>
-                <span className="text-gray-500">{userData.preferences.metricSystem === 'metric' ? 'Metric (kg, cm)' : 'Imperial (lb, in)'}</span>
-              </div>
-            </div>
-          ) : (
-            <form className="space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center pb-2 border-b">
-                <label className="w-full md:w-1/3 text-gray-700 mb-2 md:mb-0">Name:</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={editedUserData.name}
-                  onChange={handleChange}
-                  className="w-full md:w-2/3 p-2 border rounded-md"
-                />
-              </div>
-              <div className="flex flex-col md:flex-row md:items-center pb-2 border-b">
-                <label className="w-full md:w-1/3 text-gray-700 mb-2 md:mb-0">Email:</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={editedUserData.email}
-                  onChange={handleChange}
-                  className="w-full md:w-2/3 p-2 border rounded-md"
-                />
-              </div>
-              <div className="flex flex-col md:flex-row md:items-center pb-2 border-b">
-                <label className="w-full md:w-1/3 text-gray-700 mb-2 md:mb-0">Notifications:</label>
-                <div className="w-full md:w-2/3">
-                  <label className="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      name="preferences.notifications"
-                      checked={editedUserData.preferences.notifications}
-                      onChange={handleChange}
-                      className="rounded text-blue-600"
-                    />
-                    <span className="ml-2">Enable notifications</span>
-                  </label>
-                </div>
-              </div>
-              <div className="flex flex-col md:flex-row md:items-center pb-2 border-b">
-                <label className="w-full md:w-1/3 text-gray-700 mb-2 md:mb-0">Dark Mode:</label>
-                <div className="w-full md:w-2/3">
-                  <label className="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      name="preferences.darkMode"
-                      checked={editedUserData.preferences.darkMode}
-                      onChange={handleChange}
-                      className="rounded text-blue-600"
-                    />
-                    <span className="ml-2">Enable dark mode</span>
-                  </label>
-                </div>
-              </div>
-              <div className="flex flex-col md:flex-row md:items-center pb-2 border-b">
-                <label className="w-full md:w-1/3 text-gray-700 mb-2 md:mb-0">Measurement System:</label>
-                <div className="w-full md:w-2/3">
-                  <select
-                    name="preferences.metricSystem"
-                    value={editedUserData.preferences.metricSystem}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded-md"
-                  >
-                    <option value="metric">Metric (kg, cm)</option>
-                    <option value="imperial">Imperial (lb, in)</option>
-                  </select>
-                </div>
-              </div>
-            </form>
-          )}
+          {/* Mobile menu button */}
+          <div className="flex md:hidden items-center">
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
+            >
+              <span className="sr-only">Open main menu</span>
+              {!isMobileMenuOpen ? (
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              ) : (
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+      
+      {/* Mobile menu, show/hide based on menu state */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                to={item.path}
+                className={`block px-3 py-2 rounded-md text-base font-medium ${
+                  isActive(item.path)
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {item.name}
+              </Link>
+            ))}
+            
+            {/* Mobile profile menu */}
+            <div className="border-t border-gray-200 pt-2 mt-2">
+              <div className="flex items-center px-3 py-2">
+                <img 
+                  className="h-8 w-8 rounded-full object-cover mr-2"
+                  src="/api/placeholder/40/40" 
+                  alt="Profile" 
+                />
+                <span className="text-base font-medium text-gray-800">Alex</span>
+              </div>
+              <Link 
+                to="/settings" 
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Settings
+              </Link>
+              <Link 
+                to="/activity" 
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Activity Log
+              </Link>
+              <button 
+                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Sign Out
+              </button>
+            </div>
+            
+            <button className="mt-2 w-full px-4 py-2 rounded-md bg-gradient-to-r from-blue-500 to-teal-400 text-white font-medium text-sm hover:opacity-90 transition-opacity duration-150 ease-in-out">
+              Sign In
+            </button>
+          </div>
+        </div>
+      )}
+    </nav>
+  )
+}
 
-export default Profile
+export default Navbar
