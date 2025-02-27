@@ -6,6 +6,7 @@ import Workout from './pages/Workout'
 import Tutorials from './pages/Tutorials'
 import Gamify from './pages/Gamify'
 import DietPlan from './pages/DietPlan'
+import Profile from './pages/Profile'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/tutorials" element={<Tutorials />} />
           <Route path="/gamify" element={<Gamify />} />
           <Route path="/diet-plan" element={<DietPlan />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </main>
       <Footer />
