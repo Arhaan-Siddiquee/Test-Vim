@@ -2,8 +2,9 @@ import React, { useRef, useState, useEffect } from 'react';
 import * as tf from '@tensorflow/tfjs';
 import * as poseDetection from '@tensorflow-models/pose-detection';
 import { Link } from 'react-router-dom';
+import squat from "../../../public/squat.gif"
 
-const SquatsExercise = () => {
+const Squats = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [isWebcamReady, setIsWebcamReady] = useState(false);
@@ -470,6 +471,9 @@ const SquatsExercise = () => {
                   </button>
                 )}
               </div>
+              <div className='flex items-center justify-center'>
+                <img src={squat} alt="" className='rounded-xl mt-4' />
+              </div>
             </div>
             
             <div>
@@ -596,4 +600,4 @@ const SquatsExercise = () => {
   );
 };
 
-export default SquatsExercise;
+export default Squats;

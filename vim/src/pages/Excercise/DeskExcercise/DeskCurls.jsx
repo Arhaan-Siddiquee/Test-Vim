@@ -3,7 +3,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as poseDetection from '@tensorflow-models/pose-detection';
 import { Link } from 'react-router-dom';
 
-const SquatsExercise = () => {
+const Deskcurls = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [isWebcamReady, setIsWebcamReady] = useState(false);
@@ -422,7 +422,7 @@ const SquatsExercise = () => {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#a148c4] to-[#4848c4] mb-0">
-            Squats Trainer
+          Deskcurls
           </h1>
           <Link to="/" className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
             Back to Menu
@@ -466,14 +466,14 @@ const SquatsExercise = () => {
                     onClick={handleManualCount}
                     className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-bold transition-colors mt-4"
                   >
-                    Count Squat Manually
+                    Count curls Manually
                   </button>
                 )}
               </div>
             </div>
             
             <div>
-              <h2 className="text-xl font-bold mb-3">Tips for Squats</h2>
+              <h2 className="text-xl font-bold mb-3">Tips for Deskcurls</h2>
               <ul className="list-disc pl-5 space-y-2 text-gray-300">
                 <li>Position camera to see your lower body</li>
                 <li>Feet shoulder-width apart</li>
@@ -520,7 +520,7 @@ const SquatsExercise = () => {
                     <div className="absolute top-4 right-4 z-20">
                       <div className="bg-black/60 text-white px-4 py-2 rounded-lg">
                         <span className="text-3xl font-bold">{exerciseCount}</span>
-                        <span className="ml-2">Squats</span>
+                        <span className="ml-2">Deskcurls</span>
                       </div>
                     </div>
                     
@@ -553,7 +553,7 @@ const SquatsExercise = () => {
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
                     <div className="text-center">
                       <h3 className="text-xl font-bold text-white mb-2">Manual Tracking Mode</h3>
-                      <p className="text-white mb-4">Press the button to count your squats</p>
+                      <p className="text-white mb-4">Press the button to count your Deskcurls</p>
                     </div>
                   </div>
                 )}
@@ -570,22 +570,14 @@ const SquatsExercise = () => {
                 </div>
                 <div className="flex justify-between text-sm mt-1">
                   <span>0</span>
-                  <span>Goal: 15 squats</span>
+                  <span>Goal: 15 Deskcurls</span>
                 </div>
               </div>
               
               {/* Quick Guide */}
               <div className="mt-6 bg-gray-700 p-4 rounded-lg">
-                <h3 className="text-lg font-bold mb-2">Perfect Squat Form</h3>
+                <h3 className="text-lg font-bold mb-2">Perfect Curls Form</h3>
                 <div className="space-y-2 text-sm text-gray-300">
-                  <p>• Stand with feet slightly wider than hip-width apart</p>
-                  <p>• Toes slightly turned out, weight in heels</p>
-                  <p>• Keep your chest up and shoulders back</p>
-                  <p>• Engage your core throughout the movement</p>
-                  <p>• Push hips back and down as if sitting in a chair</p>
-                  <p>• Lower until thighs are at least parallel to floor</p>
-                  <p>• Keep knees in line with toes (don't collapse inward)</p>
-                  <p>• Push through heels to return to standing position</p>
                 </div>
               </div>
             </div>
@@ -596,4 +588,4 @@ const SquatsExercise = () => {
   );
 };
 
-export default SquatsExercise;
+export default Deskcurls;
